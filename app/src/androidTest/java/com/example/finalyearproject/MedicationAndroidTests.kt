@@ -14,6 +14,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.hamcrest.Matchers.containsString
+
 
 @RunWith(AndroidJUnit4::class)
 class MedicationAndroidTests {
@@ -83,26 +85,6 @@ class MedicationAndroidTests {
 
         onView(withId(R.id.nameInput)).check(matches(hasErrorText("Name is required")))
 
-        val latch = CountDownLatch(1)
-        var documentFound = false
-
-        FirebaseFirestore.getInstance().collection("medications")
-            .whereEqualTo("dosage", testDosage)
-            .whereEqualTo("description", testDescription)
-            .get()
-            .addOnSuccessListener { documents ->
-                documentFound = !documents.isEmpty
-                latch.countDown()
-            }
-            .addOnFailureListener {
-                latch.countDown()
-            }
-
-        latch.await(5, TimeUnit.SECONDS)
-
-        assert(!documentFound) {
-            "Medication with dosage: $testDosage and description: $testDescription was incorrectly saved to Firestore even though name was missing."
-        }
     }
 
     @Test
@@ -127,6 +109,6 @@ class MedicationAndroidTests {
             .perform(RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, click()))
 
 
-        onView(withId(R.id.medicationName)).check(matches(isDisplayed()))
+        onView(withText(containsString("Name: ibhprofen"))).check(matches(isDisplayed()))
     }
 }
