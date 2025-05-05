@@ -26,6 +26,7 @@ class EditPatientActivity : AppCompatActivity() {
     private lateinit var emergencyContactEditText: EditText
     private lateinit var emergencyContactNumberEditText: EditText
     private lateinit var medicalConditionsEditText: EditText
+    private lateinit var allergensEditText: EditText
     private lateinit var currentMedicationsEditText: EditText
     private lateinit var saveButton: Button
     private lateinit var db: FirebaseFirestore
@@ -70,6 +71,7 @@ class EditPatientActivity : AppCompatActivity() {
         emergencyContactEditText = findViewById(R.id.emergencyContactEditText)
         emergencyContactNumberEditText = findViewById(R.id.emergencyContactPhoneEditText)
         medicalConditionsEditText = findViewById(R.id.medicalConditionsEditText)
+        allergensEditText = findViewById(R.id.allergensEditText)
         currentMedicationsEditText = findViewById(R.id.currentMedicationsEditText)
         saveButton = findViewById(R.id.saveButton)
 
@@ -153,6 +155,17 @@ class EditPatientActivity : AppCompatActivity() {
                         null
                     }?.filterIsInstance<String>() ?: emptyList()
 
+                    val allergens = try {
+                        // handle allergens as a string
+                        doc.get("allergies") as? List<*>
+                    } catch (e: Exception) {
+                        Log.e("FIREBASE_PARSE", "Could not read allergens: ${e.message}")
+                        null
+                    }?.filterIsInstance<String>() ?: emptyList()
+
+                    allergensEditText.setText(allergens.joinToString(", "))
+
+
                     val currentMedications = try {
                         // handle currentMedications as a string
                         doc.get("currentMedications") as? List<*>
@@ -204,6 +217,12 @@ class EditPatientActivity : AppCompatActivity() {
         val emergencyContactNumber = emergencyContactNumberEditText.text.toString().trim()
         val medicalConditionsStr = medicalConditionsEditText.text.toString().trim()
         val currentMedicationsStr = currentMedicationsEditText.text.toString().trim()
+
+        val allergensStr = allergensEditText.text.toString().trim()
+        val allergens = if (allergensStr.isNotEmpty()) {
+            allergensStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        } else emptyList()
+
 
         // different validation checks to ensure the data is valid
         if (firstName.isEmpty() || lastName.isEmpty() || dob.isEmpty() || gender.isEmpty() || bloodType.isEmpty()) {
@@ -264,8 +283,9 @@ class EditPatientActivity : AppCompatActivity() {
             "emergencyContact" to emergencyContact,
             "emergencyContactNumber" to emergencyContactNumber,
             "medicalConditions" to medicalConditions,
-            "currentMedications" to currentMedications
-        )
+            "currentMedications" to currentMedications,
+            "allergies" to allergens,
+            )
 
         if (!isRunningInRobolectric()) {
             // if the app is not running in Robolectric, update the patient data in Firestore

@@ -47,7 +47,7 @@ class WriteNfcActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_write_nfc)
-        findViewById<View>(R.id.expirationDateInput)?.visibility = View.GONE
+        findViewById<View>(R.id.expirationDateLayout)?.visibility = View.GONE
 
         db = FirebaseFirestore.getInstance()
 

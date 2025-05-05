@@ -125,7 +125,8 @@ class ViewMedicationActivity : AppCompatActivity() {
                 dosage = selectedMedication.dosage,
                 description = selectedMedication.description,
                 batchNumber = "N/A", // batch not available from search
-                expiryDate = "N/A"   // expiry date not available from search
+                expiryDate = "N/A",   // expiry date not available from search
+                quantity = "N/A"
             )
         }
 
@@ -260,13 +261,14 @@ class ViewMedicationActivity : AppCompatActivity() {
         }
     }
 
-    private fun showMedicationPopup(name: String, dosage: String, description: String, batchNumber: String, expiryDate: String) {
+    private fun showMedicationPopup(name: String, dosage: String, description: String, batchNumber: String, expiryDate: String, quantity: String) {
         val message = """
         Name: $name
         Dosage: $dosage
         Description: $description
         Batch Number: $batchNumber
         Expiry Date: $expiryDate
+        Quantity: $quantity
     """.trimIndent()
 
         val builder = androidx.appcompat.app.AlertDialog.Builder(this)
@@ -368,6 +370,8 @@ class ViewMedicationActivity : AppCompatActivity() {
                     val batchNumber = doc.getString("batchNumber") ?: "Unknown"
                     val expiryTimestamp = doc.getTimestamp("expirationDate")
                     val expiryDate = expiryTimestamp?.toDate()?.toString() ?: "Unknown"
+                    val quantityValue = doc.getLong("quantity")?.toInt() ?: -1
+                    val quantity = if (quantityValue >= 0) quantityValue.toString() else "Unknown"
 
                     // now fetch the medication data from the medications collection
                     db.collection("medications").document(medicationId)
@@ -378,7 +382,9 @@ class ViewMedicationActivity : AppCompatActivity() {
                                 val dosage = doc.getString("dosage") ?: "Unknown"
                                 val description = doc.getString("description") ?: "No Description"
 
-                                showMedicationPopup(name, dosage, description, batchNumber, expiryDate)
+
+
+                                showMedicationPopup(name, dosage, description, batchNumber, expiryDate, quantity)
 
 
 

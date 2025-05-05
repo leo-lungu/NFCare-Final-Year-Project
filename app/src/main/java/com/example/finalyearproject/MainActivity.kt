@@ -326,8 +326,10 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
 
         Log.d("NFC_DEBUG", "NFC Tag Scanned - Intent Action: ${intent.action}")
+        Log.d("NFC_STATE", "isAdministeringMedication: $isAdministeringMedication")
 
         val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        Log.d("NFC_DEBUG", "Tag: $tag")
         if (tag == null) {
             // if no tag is found
             Toast.makeText(this, "No NFC tag detected", Toast.LENGTH_SHORT).show()
@@ -345,6 +347,7 @@ class MainActivity : AppCompatActivity() {
 
         if (isAdministeringMedication) {
             // if administering medication
+            Log.d("NFC_FLOW", "isAdministeringMedication = true. Scanned ID: $scannedId")
             isAdministeringMedication = false
             Log.d("NFC_FLOW", "Starting medication box scan for ID: $scannedId")
             handleMedicationBoxScan(scannedId)
@@ -392,6 +395,7 @@ class MainActivity : AppCompatActivity() {
     private fun readNfcTag(intent: Intent): String {
         // read the NFC tag and return the NHS ID
         val rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
+        Log.d("NFC_TAG", "Raw messages = $rawMsgs")
         if (!rawMsgs.isNullOrEmpty()) {
             // if there are messages in the NFC tag
             val ndefMessage = rawMsgs[0] as NdefMessage
@@ -400,6 +404,7 @@ class MainActivity : AppCompatActivity() {
                 it.tnf == NdefRecord.TNF_WELL_KNOWN &&
                         it.type.contentEquals(NdefRecord.RTD_TEXT)
             }
+            Log.d("NFC_TAG", "NDEF record = $ndefRecord")
 
             if (ndefRecord != null) {
                 // if the NDEF record is not null
@@ -414,10 +419,18 @@ class MainActivity : AppCompatActivity() {
                 return if (textLength > 0) {
                     // if the text length is greater than 0
                     val rawText = String(payload, langCodeLen + 1, textLength, encoding)
-                    try {
-                        decrypt(rawText) // decrypt the text (from the NFC tag that contains nhs id)
+                    Log.d("NFC_TAG", "Encrypted text: $rawText")
+                    return try {
+                        // only decrypt if scanning wristband (not administering medication)
+                        if (isAdministeringMedication) {
+                            rawText // dont decrypt if administering medication
+                        } else {
+                            val decrypted = decrypt(rawText)
+                            Log.d("NFC_TAG", "Decrypted text: $decrypted")
+                            decrypted
+                        }
                     } catch (e: Exception) {
-                        Log.e("NFC_READ_ERROR", "Failed to decrypt: ${e.message}")
+                        Log.e("NFC_TAG", "Decryption failed: ${e.message}")
                         "ERROR: Failed to decrypt NFC data"
                     }
                 } else {
@@ -539,6 +552,28 @@ class MainActivity : AppCompatActivity() {
                     prescriptionButton.visibility = View.VISIBLE
                     callEmergencyContactButton.visibility = View.VISIBLE
 
+                    db.collection("medicationSchedules")
+                        // check if the patient has any prescriptions
+                        .whereEqualTo("userId", nhsId)
+                        .get()
+                        .addOnSuccessListener { querySnapshot ->
+                            if (querySnapshot.isEmpty) {
+                                // if there are no prescriptions
+                                administerPatientButton.isEnabled = false
+                                administerPatientButton.alpha = 0.5f // disable the button
+                            } else {
+                                // if there are prescriptions
+                                administerPatientButton.isEnabled = true
+                                administerPatientButton.alpha = 1.0f
+                            }
+                        }
+                        .addOnFailureListener {
+                            // if failed to check prescriptions
+                            Log.e("FIREBASE_ERROR", "Failed to check prescriptions: ${it.message}")
+                            administerPatientButton.isEnabled = false
+                            administerPatientButton.alpha = 0.5f
+                        }
+
                     patientAllergiesList =
                         doc.get("allergies") as? List<String> ?: emptyList() // get
                     patientAllergies.text = "Allergies: ${
@@ -624,9 +659,12 @@ class MainActivity : AppCompatActivity() {
                                                 // get schedule details, doses, and warnings
                                                 val dosesPerDay =
                                                     scheduleDoc.getLong("dosesPerDay")?.toInt() ?: 1
-                                                val lastAdmin =
-                                                    scheduleDoc.getTimestamp("lastAdministered")
-                                                        ?.toDate()
+                                                val lastAdmin = try {
+                                                    scheduleDoc.getTimestamp("lastAdministered")?.toDate()
+                                                } catch (e: Exception) {
+                                                    Log.e("DATA_TYPE_ERROR", "Invalid type for 'lastAdministered': ${e.message}")
+                                                    null
+                                                }
                                                 val dosesTakenToday =
                                                     scheduleDoc.getLong("dosesTakenToday")?.toInt()
                                                         ?: 0
@@ -720,6 +758,11 @@ class MainActivity : AppCompatActivity() {
                                                     "No prescription found for this patient and medication.",
                                                     Toast.LENGTH_LONG
                                                 ).show()
+                                                AlertDialog.Builder(this)
+                                                    .setTitle("Prescription Not Found")
+                                                    .setMessage("This patient does not have a valid prescription for this medication. Administration cannot proceed.")
+                                                    .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+                                                    .show()
                                             }
                                         }
                                         .addOnFailureListener {
@@ -821,7 +864,12 @@ class MainActivity : AppCompatActivity() {
             val calendarNow = Calendar.getInstance()
             val now = calendarNow.time
 
-            val lastAdmin = snapshot.getTimestamp("lastAdministered")?.toDate()
+            val lastAdmin: Date? = try {
+                snapshot.getTimestamp("lastAdministered")?.toDate()
+            } catch (e: Exception) {
+                Log.e("DATA_TYPE_ERROR", "Invalid 'lastAdministered' type: ${e.message}")
+                null
+            }
             val dosesTakenToday = snapshot.getLong("dosesTakenToday") ?: 0
 
             val calendarLast = Calendar.getInstance()
