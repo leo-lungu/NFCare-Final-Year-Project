@@ -19,7 +19,7 @@ class LoginActivityTest {
 
     @Test
     fun loginValidFields() {
-        // before running this test:
+        // if testing doesnt work, then before running this test:
         // 1. make sure user exists
         // 2. make sure the app is in the foreground
         // 3. comment finish() in goToMainActivity() in LoginActivity.kt
@@ -37,7 +37,7 @@ class LoginActivityTest {
 
     @Test
     fun loginInvalidUsernameValidEmailPassword() {
-        // before running this test:
+        // if testing doesnt work, then before running this test:
         // 1. make sure user exists
         // 2. make sure the app is in the foreground
         // 3. comment finish() in goToMainActivity() in LoginActivity.kt
@@ -55,7 +55,7 @@ class LoginActivityTest {
 
     @Test
     fun loginValidUsernameEmailInvalidPassword() {
-        // before running this test:
+        // if testing doesnt work, then before running this test:
         // 1. make sure user exists
         // 2. make sure the app is in the foreground
         // 3. comment finish() in goToMainActivity() in LoginActivity.kt
@@ -73,7 +73,7 @@ class LoginActivityTest {
 
     @Test
     fun loginLogout() {
-        // before running this test:
+        // if testing doesnt work, then before running this test:
         // 1. make sure user exists
         // 2. make sure the app is in the foreground
         // 3. comment finish() in goToMainActivity() in LoginActivity.kt
