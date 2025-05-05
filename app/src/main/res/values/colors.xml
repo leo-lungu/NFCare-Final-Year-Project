@@ -1,0 +1,11 @@
+<resources>
+    <!-- Light Theme Colors -->
+    <color name="primary">#0B3D91</color>
+    <color name="onPrimary">#FFFFFF</color>
+    <color name="secondary">#FF6F00</color>
+    <color name="onSecondary">#FFFFFF</color>
+    <color name="background">#F5F5F5</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="onSurface">#121212</color>
+    <color name="purple_500">#0B3D91</color>
+</resources>
