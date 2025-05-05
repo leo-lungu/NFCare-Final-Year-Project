@@ -60,7 +60,7 @@ cd NFCare-Final-Year-Project
 - Download the google-services.json file
 - Place it in the app/ directory:
 
-- Disclaimer: If using the .zip within the submission, Firebase has already been set up!
+- **Disclaimer: If using the .zip within the submission, Firebase has already been set up!**
 
 
 ```bash
