@@ -43,8 +43,8 @@ This Android application was developed for the 2024-25 Final Year Project, with 
 
 ### 1. **Clone the repository**
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/leo-lungu/NFCare-Final-Year-Project.git
+cd NFCare-Final-Year-Project
 ```
 
 ### 2. **Open in Android Studio**
