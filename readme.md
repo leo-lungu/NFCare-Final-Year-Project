@@ -1,6 +1,6 @@
 # NFCare
 
-This Android application was developed for the 2024-25 Final Year Project, with the scope of improving the healthcare industry through improving patient identification and medication errors. The application allows tracking of patients and medication. It integrates with **Firebase Firestore** to fetch medication and batch-specific information.
+This Android application was developed for the 2024-25 Final Year Project to mitigate patient identification and medication errors in the healthcare industry. The application tracks patients and medication. It integrates with **Firebase Firestore** to fetch medication and batch-specific information.
 
 ---
 
