@@ -65,6 +65,8 @@ class MainActivity : AppCompatActivity() {
     private var currentEmergencyContactNumber: String? = null
     private lateinit var removeNfcButton: Button
     private lateinit var exportPdfButton: Button
+    private var hasShownFailureDialog = false
+
 
     private var patientAllergiesList = emptyList<String>() // list to store patient allergies
 
@@ -856,7 +858,7 @@ class MainActivity : AppCompatActivity() {
     private fun logMedicationAdministration(box: MedicationSpecific, scheduleId: String) {
         // log the medication administration
         val scheduleRef = db.collection("medicationSchedules").document(scheduleId)
-
+        hasShownFailureDialog = false
         db.runTransaction { transaction ->
             // run a transaction to update the medication schedule
             val snapshot = transaction.get(scheduleRef)
@@ -914,12 +916,15 @@ class MainActivity : AppCompatActivity() {
 
             val expirationDate = snapshot.getTimestamp("expirationDate")?.toDate() // get expiration date
             val currentDate = Date()
-            if (expirationDate != null && expirationDate.before(currentDate)) {
-                // if the medication has expired
-                throw FirebaseFirestoreException(
-                    "MEDICATION HAS EXPIRED",
-                    FirebaseFirestoreException.Code.ABORTED
-                )
+            if (expirationDate != null) {
+                val cal = Calendar.getInstance().apply { time = expirationDate }
+                cal.add(Calendar.DAY_OF_YEAR, 1) // add 1 day to expiration
+                if (cal.time.before(currentDate)) {
+                    throw FirebaseFirestoreException(
+                        "MEDICATION HAS EXPIRED",
+                        FirebaseFirestoreException.Code.ABORTED
+                    )
+                }
             }
 
             if (currentQuantity > 0) {
@@ -938,11 +943,10 @@ class MainActivity : AppCompatActivity() {
                     "boxName" to box.boxName
                 )
             } else {
-                // if the current quantity is 0
-                throw FirebaseFirestoreException(
-                    "Medication quantity is already zero",
-                    FirebaseFirestoreException.Code.ABORTED
-                )
+            throw FirebaseFirestoreException(
+                "Medication quantity is already zero",
+                FirebaseFirestoreException.Code.ABORTED
+            )
             }
         }.addOnSuccessListener { result ->
             // if the transaction is successful
@@ -1005,13 +1009,31 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
             // have an alert dialog to show the error message and confirm
             runOnUiThread {
-                AlertDialog.Builder(this)
-                    .setTitle("Expired Medication")
-                    .setMessage("Medication has expired. Please check the box, and dispose of it.")
-                    .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-                    .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-                    .show()
-                vibrate() // vibrate as error happens to alert user
+                if (!hasShownFailureDialog) {
+                    hasShownFailureDialog = true
+
+                    val title: String
+                    val message: String
+
+                    if (e.message?.contains("quantity", ignoreCase = true) == true) {
+                        title = "Out of Stock"
+                        message = "This medication box has no remaining quantity. Please use another box or restock."
+                    } else if (e.message?.contains("expired", ignoreCase = true) == true) {
+                        title = "Expired Medication"
+                        message = "Medication has expired. Please check the box, and dispose of it."
+                    } else {
+                        title = "Administration Failed"
+                        message = "An unexpected error occurred: ${e.message}"
+                    }
+
+                    AlertDialog.Builder(this)
+                        .setTitle(title)
+                        .setMessage(message)
+                        .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+                        .show()
+
+                    vibrate() // vibrate as error happens to alert user
+                }
             }
 
             val logData = mapOf(
@@ -1175,23 +1197,38 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun decrypt(encryptedData: String): String {
-        // decrypt the encrypted data
-        val secretKey = getSecretKey()
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        try {
+            val secretKey = getSecretKey()
+            Log.d("NFC_TAG", "Got secret key")
 
-        val decoded = Base64.decode(encryptedData, Base64.DEFAULT)
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            Log.d("NFC_TAG", "Cipher instance obtained")
 
-        // extract the IV and encrypted bytes
-        val iv = decoded.copyOfRange(0, 12)
-        val encryptedBytes = decoded.copyOfRange(12, decoded.size)
+            val decoded = Base64.decode(encryptedData, Base64.DEFAULT)
+            Log.d("NFC_TAG", "Decoded Base64 data length: ${decoded.size}")
 
-        val gcmSpec = GCMParameterSpec(128, iv)
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
+            if (decoded.size < 13) {
+                throw IllegalArgumentException("Invalid encrypted data: too short")
+            }
 
-        val originalBytes = cipher.doFinal(encryptedBytes)
+            val iv = decoded.copyOfRange(0, 12)
+            val encryptedBytes = decoded.copyOfRange(12, decoded.size)
+            Log.d("NFC_TAG", "IV and Encrypted bytes extracted")
 
-        return String(originalBytes, Charsets.UTF_8) // convert to string
+            val gcmSpec = GCMParameterSpec(128, iv)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
+            Log.d("NFC_TAG", "Cipher initialized for decryption")
+
+            val originalBytes = cipher.doFinal(encryptedBytes)
+            Log.d("NFC_TAG", "Decryption succeeded")
+
+            return String(originalBytes, Charsets.UTF_8)
+        } catch (e: Exception) {
+            Log.e("NFC_TAG", "Decryption error: ${e.message}", e)
+            throw e 
+        }
     }
+
 
 
 }

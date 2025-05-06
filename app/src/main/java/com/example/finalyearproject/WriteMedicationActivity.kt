@@ -57,6 +57,9 @@ class WriteMedicationActivity : AppCompatActivity() {
         val batchNumberInput = findViewById<EditText>(R.id.batchNumberInput)
         val expirationDateInput = findViewById<EditText>(R.id.expirationDateInputField)
         val quantityInput = findViewById<EditText>(R.id.quantityInput)
+        val batchNumberLayout = findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.batchNumberLayout)
+        val expirationDateLayout = findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.expirationDateLayout)
+        val quantityLayout = findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.quantityLayout)
         val saveBoxButton = findViewById<Button>(R.id.saveBoxButton)
 
         writeNfcButton.visibility = View.GONE // hide NFC write button initially
@@ -66,9 +69,9 @@ class WriteMedicationActivity : AppCompatActivity() {
             selectedMedicationId = selectedMedication.id
             Toast.makeText(this, "Selected: ${selectedMedication.name}", Toast.LENGTH_SHORT).show()
 
-            batchNumberInput.visibility = View.VISIBLE
-            expirationDateInput.visibility = View.VISIBLE
-            quantityInput.visibility = View.VISIBLE
+            batchNumberLayout.visibility = View.VISIBLE
+            expirationDateLayout.visibility = View.VISIBLE
+            quantityLayout.visibility = View.VISIBLE
             saveBoxButton.visibility = View.VISIBLE
             writeNfcButton.visibility = View.GONE
 
@@ -168,7 +171,7 @@ class WriteMedicationActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) // date format
+            val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             val expirationDate = try {
                 // try to parse expiration date input
                 val parsedDate = dateFormat.parse(expirationRaw)!!
@@ -215,9 +218,9 @@ class WriteMedicationActivity : AppCompatActivity() {
                     expirationDateInput.text.clear()
                     quantityInput.text.clear()
 
-                    batchNumberInput.visibility = View.GONE
-                    expirationDateInput.visibility = View.GONE
-                    quantityInput.visibility = View.GONE
+                    batchNumberLayout.visibility = View.GONE
+                    expirationDateLayout.visibility = View.GONE
+                    quantityLayout.visibility = View.GONE
                     saveBoxButton.visibility = View.GONE
 
                     selectedMedicationId = generatedBoxId
