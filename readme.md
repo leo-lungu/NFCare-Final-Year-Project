@@ -73,5 +73,20 @@ your-project/
 ### 4. **Run Application on Physical Device**
 - Enable USB or Wireless Debugging (USB Debugging is preferred)
 - Connect to Android Studio (Wired/Wi-Fi)
-- In Android Studio, press Run 
+- In Android Studio, press Run
+
+--- 
+
+If running the application using the Firestore provided by myself, feel free to use the following testing username, email and password:
+- username: 1234
+- email: test@test.com
+- password: testtest
+
+or 
+
+- username: 210367528
+- email: ec21637@qmul.ac.uk
+- Test1234!
+
+
 
